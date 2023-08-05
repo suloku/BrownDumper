@@ -1,0 +1,10 @@
+# depslib dependency file v1.0
+1691233068 source:c:\users\suloku\source\repos\browndumper\main.cpp
+	<stdio.h>
+	<string.h>
+	<cstdint>
+	<stdlib.h>
+	"constants.h"
+
+1691254521 c:\users\suloku\source\repos\browndumper\constants.h
+
