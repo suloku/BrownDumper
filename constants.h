@@ -817,6 +817,14 @@ const char *MapNames[]=
     "0xF5 Redd's Room",
     "0xF6 Jared's Room",
     "0xF7 Agatha's Room", //This is the last map, there's only 248 maps, this is ID 247
+    "0xF8",
+    "0xF9",
+    "0xFA",
+    "0xFB",
+    "0xFC",
+    "0xFD",
+    "0xFE",
+    "0xFF",
     NULL
 
 

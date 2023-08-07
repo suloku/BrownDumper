@@ -28,7 +28,7 @@ void ProcessBasestats (char*buffer);
 void ProcessEvoMoves (char*buffer);
 void ProcessMoveData (char*buffer);
 void ProcessWildData (char*buffer);
-void ProcessHiddenData (char*buffer);
+void ProcessHiddenData (char*buffer, int offset);
 void ProcessTypeTableData (char*buffer);
 
 //Constants
@@ -52,9 +52,10 @@ void ProcessTypeTableData (char*buffer);
     //Hidden data
         int HiddenObjectMapsOffset = 0x46a40;
         int HiddenObjectPointersOffset = 0x46a96;
-        int hiddenObjectsBank = 0x11; //Hidden object data is at block 0x17
-        int totalHiddenMaps = HiddenObjectPointersOffset-HiddenObjectMapsOffset; //they are stored contiguously, each map is 1 byte
+        int hiddenObjectsBank = 0x11; //Hidden object data is at bank 17
+        int totalHiddenMaps = 84; //they are stored contiguously, each map is 1 byte
         int curHiddenOffset = 0;
+        uint16_t HiddenOffsetU16 = 0;
     //Types table
         int TypeEffectivenesOffset = 0x3fBC8;
 
@@ -342,15 +343,23 @@ exit_message:
         {
 
             // Read two byte pointer to current map hidden object data
-            memcpy(&curHiddenOffset, romBuffer+HiddenObjectPointersOffset+(2*i), 2);
-            //Convert offset to absolute offset
-            curHiddenOffset = ThreeByteToTwoByte(hiddenObjectsBank, curHiddenOffset);
+            memcpy(&HiddenOffsetU16, romBuffer+HiddenObjectPointersOffset+(2*i), 2);
 
-           // Read wild data
-           printf("%i: Map %03d %s (0x%02X) (Hidden data offset: 0x%04X)\n", i, (uint8_t)(romBuffer[HiddenObjectMapsOffset+i]), MapNames[(uint8_t)(romBuffer[HiddenObjectMapsOffset+i])], (uint8_t)romBuffer[HiddenObjectMapsOffset+i], curHiddenOffset);
-           ProcessHiddenData(romBuffer+curHiddenOffset);
+            //Convert offset to absolute offset
+            curHiddenOffset = ThreeByteToTwoByte(hiddenObjectsBank, HiddenOffsetU16);
+
+           // Read hidden data
+           //printf("%i: Map %s (0x%02X) (Hidden data offset: 0x%04X) (Pointer at: 0x%04X)\n", i, MapNames[(uint8_t)(romBuffer[HiddenObjectMapsOffset+i])], (uint8_t)romBuffer[HiddenObjectMapsOffset+i], curHiddenOffset, HiddenObjectPointersOffset+(2*i));
+            printf("%i: ", i);
+            printf("Map %s ", MapNames[(uint8_t)(romBuffer[HiddenObjectMapsOffset+i])]);
+            //printf("(0x%02X) ", (uint8_t)romBuffer[HiddenObjectMapsOffset+i]);
+            printf("(Hidden data offset: 0x%04X) ", curHiddenOffset);
+            printf("(Pointer at: 0x%04X)\n", HiddenObjectPointersOffset+(2*i));
+
+           ProcessHiddenData(romBuffer+curHiddenOffset, curHiddenOffset);
 
         }//all maps read
+        //printf("\n\n Hidden Data read");
     }
     else if (mode == DUMP_TYPETABLE)
     {
@@ -381,49 +390,51 @@ void my_exit()
     exit(0);
 }
 
-void ProcessHiddenData (char*buffer)
+void ProcessHiddenData (char*buffer, int offset)
 {
-    //Each hidden item has 6 bytes
+    /*Each hidden item has 6 bytes
+    db \2 ; y coord
+	db \1 ; x coord
+	db \3 ; item id
+	dba \4 ; object routine
+    */
+
     uint8_t x_coord = 0;
     uint8_t y_coord = 0;
-    uint8_t item_text_predef = 0;
-    uint8_t bank = 0;
+    uint8_t item_text_ID = 0;
+    uint8_t predef_bank = 0;
     uint16_t predef_pointer;
 
     int cur_object = 0;
     int cur_buffer = 0;
+
     while (1)
     {
-
         y_coord = buffer[0+cur_buffer];
         x_coord = buffer[1+cur_buffer];
-        item_text_predef = buffer[2+cur_buffer];
-        bank = buffer[3+cur_buffer];
+        item_text_ID = buffer[2+cur_buffer];
+        predef_bank = buffer[3+cur_buffer];
         memcpy(&predef_pointer, buffer+4+cur_buffer, 2);
 
+        if (y_coord == 0xff) break; //0xFF terminates the hidden object entries
+
         //Only dump hidden items
-        //if (true)
+        //Identify what is what by the predefined routine the hidden object uses
+        //Others are CableClubRightGameboy, OpenRedsPC, PrintBookcaseText, PrintNotebookText...
         if(predef_pointer == 0x6688)//item
         {
-            printf ("\tObject %d:\n", (cur_object));
+            printf ("\tObject %d (Addr 0x%4X):\n", cur_object, offset+(cur_object*6));
             printf ("\t\t X coord: %02d Y coord: %02d\n", x_coord, y_coord);
-            if (predef_pointer == 0x6688)//item
-            {
-                printf ("\t\t Item: %s\n", ItemName[item_text_predef]);
-            }
-            else
-            {
-                printf ("\t\t Item_Predef: %02X\n", item_text_predef);
-            }
-            printf ("\t\t Bank: 0x%02X Pointer: 0x%02X\n", bank, predef_pointer);
+                printf ("\t\t Item: %s\n", ItemName[item_text_ID]);
+
+            //No need to print the address for the predef routine
+            //printf ("\t\t Bank: 0x%02X Pointer: 0x%02X\n", predef_bank, predef_pointer);
         }
 
         cur_buffer += 6;
         cur_object++;
-        if ((uint8_t)buffer[0+cur_buffer] >= 0xff) break;
-        //printf ("\t\t\t%x\n", (uint8_t)buffer[0+cur_buffer]);
-        if (cur_object == 5) break;
     }
+    printf("\tTotal hidden objects: %d\n",cur_object );
     return;
 }
 
