@@ -30,6 +30,7 @@ void ProcessMoveData (char*buffer);
 void ProcessWildData (char*buffer);
 void ProcessHiddenData (char*buffer, int offset);
 void ProcessTypeTableData (char*buffer);
+void ProcessTrainerData (char*buffer);
 
 //Constants
     int totalmon = 255;
@@ -68,6 +69,7 @@ void ProcessTypeTableData (char*buffer);
 #define DUMP_WILD 3
 #define DUMP_HIDDEN 4
 #define DUMP_TYPETABLE 5
+#define DUMP_TRAINERS 6
 
 char * romBuffer;
 int main (int argc, char** argv)
@@ -94,6 +96,7 @@ exit_message:
 		printf("\n\t-wild:   dump wild pokémon data");
 		printf("\n\t-hidden: dump hidden item data (only items, excludes hidden objects)");
 		printf("\n\t-typestable: dump type effectiveness table (all combinations not in table are neutral damage)");
+		printf("\n\t-trainers: dump trainer teams based on trainer class");
         my_exit();
 	}
 	int current_argument = 1;
@@ -122,6 +125,10 @@ exit_message:
 	else if( !strcmp(argv[current_argument], "-typestable") )
 	{
         mode = DUMP_TYPETABLE;
+	}
+    else if( !strcmp(argv[current_argument], "-trainers") )
+	{
+        mode = DUMP_TRAINERS;
 	}
 	else
     {
@@ -365,15 +372,19 @@ exit_message:
     {
         ProcessTypeTableData(romBuffer+TypeEffectivenesOffset);
     }
+    else if (mode == DUMP_TRAINERS)
+    {
+        ProcessTrainerData(romBuffer);
+    }
 
     //Save output
-
+#ifdef SWAP_PICS
     FILE * outpFile;
-    outpFile = fopen ("out.gb", "wb");
+    outpFile = fopen ("swapped.gb", "wb");
     if (outpFile==NULL) {fputs ("Error opening out.gb",stderr); exit (1);}
     fwrite (romBuffer , sizeof(char), lSize, outpFile);
     fclose (outpFile);
-
+#endif
   // terminate
     my_exit();
 
@@ -388,6 +399,202 @@ void my_exit()
         if (getchar()) break;
     }
     exit(0);
+}
+
+uint16_t Get2bytePointerFromTable(int index, char*buffer, int tableOffset)
+{
+    uint16_t pointer = 0;
+
+    memcpy(&pointer, buffer+tableOffset+(index*2), 2);
+
+    return pointer;
+
+}
+
+int GetFullPointerFromTable(int index, char*buffer, int tableOffset, int bank)
+{
+    return ThreeByteToTwoByte(bank, Get2bytePointerFromTable(index, buffer, tableOffset));
+}
+
+void ProcessTrainerData (char*buffer)
+{
+    int TrainerPicAndMoneyPointers = 0x101914; //Repointed in brown to 40:5914
+    int BANK_TrainerPicAndMoneyPointers = 0x40;
+    int TrainerAIPointers = 0x3a55c;
+    int BANK_TrainerAIPointers = 0x0e;
+    int TrainerClassMoveChoiceModifications = 0x3989B;
+    int BANK_TrainerClassMoveChoiceModifications = 0x0e;
+    int TrainerDataPointers = 0x39d3b;
+    int BANK_TrainerDataPointers = 0x0e;
+
+
+    int FemaleTrainerList = 0x3434;
+    int EvilTrainerList = 0x3439;
+
+    int totalclasses = 0x2F;
+
+
+    int teamcounter = 0;
+    int pointer = 0;
+    uint16_t u16temp = 0;
+
+    int i = 0;
+    for (i=0;i<totalclasses;i++)
+    {
+        printf("Trainer Class #%02d: %s (0x%02X)\n", i+1, TRAINER_CLASS[i+1], i+1);
+
+        //Print Picture and money
+        // 2 byte pointer
+        // 3 bytes BCD3 money
+        // pic pointer, base reward money
+        // money received after battle = base money × level of last enemy mon
+        pointer = TrainerPicAndMoneyPointers+(5*i);
+        printf ("\t Money: %02X%02X%02X\t\t", (uint8_t)buffer[pointer+2], (uint8_t)buffer[pointer+3], (uint8_t)buffer[pointer+4]);
+        printf ("Picture Offset: 0x%02X%02X", (uint8_t)buffer[pointer+1], (uint8_t)buffer[pointer]);
+        printf ("\t\t(Data offset: 0x%X)\n", pointer);
+
+        //Print AI
+        // 3 byte per entry
+        // one entry per trainer class
+        // first byte, number of times (per Pokémon) it can occur
+        // next two bytes, pointer to AI subroutine for trainer class
+        // subroutines are defined in engine/battle/trainer_ai.asm
+
+        printf ("\t AI subroutine (Offset 0x%X): ", TrainerAIPointers+(i*3));
+        memcpy(&u16temp, buffer+TrainerAIPointers+(i*3)+1, 2);
+        int j = 0;
+        for (j=0; j<19; j++)
+        {
+            if (u16temp == ItemAIPointers[j]) printf ("%s (%s)", ItemAIItems[j], ItemAINames[j] );
+        }
+        printf ("\tTimes it can Happen per Mon: %d\n", (uint8_t)buffer[TrainerAIPointers+(i*3)]);
+
+        //Print AI modifications
+
+        printf("\t AI Move choice modifications");
+        int curpointer = 0;
+        //advance pointer to this trainer class's data
+        j=0;
+        while (j<i)
+        {
+            if (buffer[TrainerClassMoveChoiceModifications+curpointer] == 0)
+            {
+                j++;
+            }
+
+            curpointer++;
+        }
+        printf (" (Offset 0x%X):", TrainerClassMoveChoiceModifications+curpointer);
+        while (true)
+        {
+            printf (" %d ", buffer[TrainerClassMoveChoiceModifications+curpointer]);
+            if (buffer[TrainerClassMoveChoiceModifications+curpointer+1]!=00)
+            {
+                printf (",");
+            }
+            else
+            {
+                printf ("\n");
+                break;
+            }
+            curpointer++;
+        }
+
+
+        //Print Teams
+        /*
+            ; if first byte != $FF, then
+            ; first byte is level (of all pokemon on this team)
+            ; all the next bytes are pokemon species
+            ; null-terminated
+            ; if first byte == $FF, then
+            ; first byte is $FF (obviously)
+            ; every next two bytes are a level and species
+            ; null-terminated
+        */
+        //printf ("\tTeams:\n");
+        curpointer = GetFullPointerFromTable(i, buffer, TrainerDataPointers, BANK_TrainerDataPointers);
+         printf ("\t Teams (Pointer offset 0x%X):\n", TrainerDataPointers+(i*2));
+        //printf("%X", curpointer);
+        //getchar();
+        //int endpointer = GetFullPointerFromTable(i+1, buffer, TrainerDataPointers, BANK_TrainerDataPointers);
+        int templevel = 0;
+        int curteam = 1;
+        bool breakflag = false;
+        while (curteam <50)//dump 50 teams per trainer (max is rocket with 41) as there's no way to know when a trainer class's teams stop
+        {
+            if (
+                        ((uint8_t)buffer[curpointer] == 0)
+                    ||
+                        breakflag == true
+                    ||
+                    (
+                        ((uint8_t)buffer[curpointer] > 100)
+                        &&
+                        ((uint8_t)buffer[curpointer] != 0xFF)
+                    )
+                ) //If this happens there's no more teams...
+            {
+                //Break in the following situations
+                //First byte of team is 0x00 (this should never happen)
+                //Impossible level
+                //Impossible species ID
+                break;
+            }
+            else
+            {
+                printf ("\t\tTeam #%02d (Offset 0x%X): ", curteam, curpointer);
+            }
+            //Read team level + species
+            if ((uint8_t)buffer[curpointer] == 0xFF) //Level + species
+            {
+                curpointer++; //advance
+                while (buffer[curpointer] != 0) //Team end
+                {
+                    //Check if it's an impossible level
+                    if ((uint8_t)buffer[curpointer] >100 || (uint8_t)buffer[curpointer] == 0)
+                    {
+                        breakflag = true;
+                        break;
+                    }
+                    //Print Level
+                    printf("%02d ", (uint8_t)buffer[curpointer]);
+                    curpointer++;
+
+                    //Print Species
+                    printf("%0s ", SpeciesName[(uint8_t)buffer[curpointer]]);
+                    curpointer++;
+                }
+                printf("\n");
+                if (breakflag) break;
+                curpointer++;
+                curteam++;
+                teamcounter++;
+            }
+            else
+            {
+                printf ("Team level: %02d Members: ", (uint8_t)buffer[curpointer]);
+                curpointer++;
+                while ((uint8_t)buffer[curpointer] != 0) //Team end
+                {
+                    printf("%s, ", SpeciesName[(uint8_t)buffer[curpointer]]);
+                    curpointer++;
+                }
+                printf("\n");
+                curpointer++;
+                curteam++;
+                teamcounter++;
+            }
+        }
+
+
+        printf ("\n");
+    }
+
+        //Female trainer list
+
+        //Evil trainer list
+
 }
 
 void ProcessHiddenData (char*buffer, int offset)
@@ -735,14 +942,86 @@ void ProcessTypeTableData (char*buffer)
 {
     int curbyte = 0;
 
-    printf("All combinations not in the table are neutral damage.\n\n");
-
-    while (1)
+    if (!comadump)
     {
-        printf("%s  vs  %s  *= %.2f (offset 0x%X)\n", TypesTable[buffer[curbyte]], TypesTable[buffer[curbyte+1]], ((float)buffer[curbyte+2])/10, TypeEffectivenesOffset+curbyte );
-        curbyte+=3;
-        if ((uint8_t)(buffer[curbyte]&0x000000FF) == 0xFF) break;
+        printf("All combinations not in the table are neutral damage.\n\n");
 
+        while (1)
+        {
+            printf("%s  vs  %s  *= %.2f (offset 0x%X)\n", TypesTable[buffer[curbyte]], TypesTable[buffer[curbyte+1]], ((float)buffer[curbyte+2])/10, TypeEffectivenesOffset+curbyte );
+            curbyte+=3;
+            if ((uint8_t)(buffer[curbyte]&0x000000FF) == 0xFF) break;
+        }
+    }
+    else //Dump types as a type compatibility char
+    {
+        int totaltypes = 24;
+        int current_type = 0;
+
+        //First write the first row with all types
+        printf(";");//First cell empty at column 0 and row 0
+        int i = 0;
+        for (i=0;i<totaltypes;i++)
+        {
+            printf("%s;", TypesMatchesNames[i]);
+        }
+        printf("\n");
+
+        uint8_t match_type1 = 0;
+        uint8_t match_type2 = 0;
+        uint8_t cur_type1 = 0;
+        uint8_t cur_type2 = 0;
+        float effectiveness = 1;
+        int j = 0;
+
+        for (i=0;i<totaltypes;i++)
+        {
+            //Print the current type (column 0)
+            printf("%s;", TypesMatchesNames[i]);
+
+            //Load current type to type 1
+            match_type1 = TypesMatchesIds[i];
+
+            //Loop trough all entries of the types table and find the matchup for each type
+            for (j=0;j<totaltypes;j++)
+            {
+                match_type2 = TypesMatchesIds[j];
+                effectiveness = 1; //Reset effectiveness to neutral
+
+                while(true)
+                {
+                    //Load type1
+                    cur_type1 = (uint8_t)(buffer[curbyte]&0x000000FF);
+                    //Load type2
+                    cur_type2 = (uint8_t)(buffer[curbyte+1]&0x000000FF);
+
+                    //Check if it is what we are looking for
+                    if (match_type1 == cur_type1 && match_type2 == cur_type2)
+                    {
+                        //Match, dump effectivenes
+                        effectiveness = ((float)buffer[curbyte+2])/10; //x2 is stored as 0x20, x0.5 stored as 0x05 etc
+                        //printf("%.2f;",effectiveness);
+                        //curbyte = 0; //Back to table start
+                        //break; //The game keeps looping until the end of the table, on repeated matchups only the last one counts
+
+                    }
+
+                    //If we reach the end of the data...
+                    if ((uint8_t)(buffer[curbyte]&0x000000FF) == 0xFF)
+                    {
+                        //At this point:
+                        // If a match was found, effectiveness was modified
+                        // If not, it will have kept its 1.0 default value we set before each loop
+                        printf("%.2f;",effectiveness);
+                        curbyte = 0; //Back to table start
+                        break;
+                    }
+                    curbyte+=3;//Next entry
+                }
+
+            }
+            printf("\n");//New row for next type
+        }
     }
 }
 

@@ -11,6 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters='-trainers &quot;C:\Users\suloku\Downloads\PokemonBrown2014\Release\tests\POKEBROWNderbs.gb&quot;' />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>

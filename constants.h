@@ -827,10 +827,6 @@ const char *MapNames[]=
     "0xFF",
     NULL
 
-
-
-
-
 };
 
 //A little hacky, the first element shouldn't be there, but works like this right now to work with ...
@@ -1989,6 +1985,63 @@ const char *TypesTable[]=
     NULL
 };
 
+const int TypesMatchesIds[]=
+{
+    0x00, //Normal
+    0x01, //Fighting
+    0x02, //Flying
+    0x03, //Poison
+    0x04, //Ground
+    0x05, //Rock
+    0x07, //Bug
+    0x08, //Ghost
+    0x09, //Steel
+    0x0D, //Wind
+    0x0E, //Sound
+    0x0F, //Tri
+    0x14, //Fire
+    0x15, //Water
+    0x16, //Grass
+    0x17, //Electric
+    0x18, //Psyichic
+    0x19, //Ice
+    0x1A, //Dragon
+    0x1B, //Dark
+    0x1C, //Wood
+    0x1D, //Gas
+    0x1E, //Abnormal
+    0x1F //Fairy
+};
+
+const char* TypesMatchesNames[]=
+{
+	"NORMAL  ",       //$00
+	"FIGHTING",       //$01
+	"FLYING  ",         //$02
+	"POISON  ",         //$03
+	"GROUND  ",         //$04
+	"ROCK    ",           //$05
+	"BUG     ",            //$07
+	"GHOST   ",          //$08
+    "STEEL   ",    //&09
+    "WIND    ", //$0D
+    "SOUND   ", //$0E
+    "TRI     ", //$0F
+    "FIRE    ",         //$14
+	"WATER   ",        //$15
+	"GRASS   ",       //$16
+	"ELECTR  ",     //$17
+	"PSYCHIC ", //$18
+	"ICE     ",          //$19
+	"DRAGON  ",       //$1A
+    "DARK    ", //$1B
+    "WOOD    ", //$1C
+    "GAS     ", //1D
+    "ABNORMAL", //$1E
+    "FAIRY   ", //$1F
+    NULL
+};
+
 const char *TM_HM[]=
 {
     "TM01: Dynamicpunch",
@@ -2061,3 +2114,128 @@ const char *EVO_TYPE[]=
 	"EV_ATKDEF",
 	NULL
 };
+
+const char *TRAINER_CLASS[]=
+{
+    "Nobody",
+    "Youngster",
+    "Bug Catcher",
+    "Lass",
+    "Sailor",
+    "Jr Trainer M",
+    "Jr Trainer F",
+    "Pokemaniac",
+    "Super Nerd",
+    "Hiker",
+    "Biker",
+    "Burglar",
+    "Engineer",
+    "PaletteBlack",
+    "Fisher",
+    "Swimmer",
+    "Cue Ball",
+    "Gambler",
+    "Beauty",
+    "Psychic",
+    "Rocker",
+    "Juggler",
+    "Tamer",
+    "Bird Keeper",
+    "Blackbelt",
+    "Rival1",
+    "Palette Red",
+    "Bugsy",
+    "Scientist",
+    "Giovanni",
+    "Rocket",
+    "Cooltrainer M",
+    "Cooltrainer F",
+    "Jared",
+    "Karpman",
+    "Lily",
+    "Sparky",
+    "Lois",
+    "Koji",
+    "Joe",
+    "Sheral",
+    "Gentleman",
+    "Rival2",
+    "Rival3",
+    "Redd",
+    "Channeler",
+    "Agatha",
+    "Drake",
+    NULL
+};
+
+const uint16_t ItemAIPointers[19]=
+{
+    0x65e9,
+    0x65ef,
+    0x65f5,
+    0x65fb,
+    0x6601,
+    0x6614,
+    0x661c,
+    0x6622,
+    0x6628,
+    0x6634,
+    0x663a,
+    0x6640,
+    0x664c,
+    0x6658,
+    0x6664,
+    0x6670,
+    0x6676,
+    0x6687,
+    0x6693
+};
+
+const char *ItemAINames[]=
+{
+    "JugglerAI",
+    "BlackbeltAI",
+    "GiovanniAI",
+    "CooltrainerMAI",
+    "CooltrainerFAI",
+    "BrockAI",
+    "MistyAI",
+    "LtSurgeAI",
+    "ErikaAI",
+    "KogaAI",
+    "BlaineAI",
+    "SabrinaAI",
+    "Rival2AI",
+    "Rival3AI",
+    "LoreleiAI",
+    "BrunoAI",
+    "AgathaAI",
+    "LanceAI",
+    "GenericAI",
+    NULL
+};
+
+const char *ItemAIItems[]=
+{
+    "Switch Mon 25%",
+    "Use X Attack 13%",
+    "Use Guard Spec 25%",
+    "Use X Attack 25%",
+    "Use Hyper Potion",
+    "Use Full Heal",
+    "Use X Defense 25%",
+    "Use X Speed 25%",
+    "Use Super Potion",
+    "Use X Attack 25%",
+    "Use Super Potion 25%",
+    "Use Hyper Potion",
+    "Use Potion",
+    "Use Full Restore",
+    "Use Super Potion",
+    "Use X Defense 25%",
+    "Use Super Potion / Switch Mon 8% chance",
+    "Use Super Potion",
+    "Nothing",
+    NULL
+};
+
