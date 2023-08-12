@@ -31,6 +31,7 @@ void ProcessWildData (char*buffer);
 void ProcessHiddenData (char*buffer, int offset);
 void ProcessTypeTableData (char*buffer);
 void ProcessTrainerData (char*buffer);
+void ProcessMapData (char*buffer);
 
 //Constants
     int totalmon = 255;
@@ -59,6 +60,9 @@ void ProcessTrainerData (char*buffer);
         uint16_t HiddenOffsetU16 = 0;
     //Types table
         int TypeEffectivenesOffset = 0x3fBC8;
+    //Map data
+        int MapHeaderPointers = 0x01ae;
+        int MapHeaderBanks = 0xc23d;
 
 
 
@@ -70,6 +74,7 @@ void ProcessTrainerData (char*buffer);
 #define DUMP_HIDDEN 4
 #define DUMP_TYPETABLE 5
 #define DUMP_TRAINERS 6
+#define DUMP_MAPS 7
 
 char * romBuffer;
 int main (int argc, char** argv)
@@ -97,6 +102,7 @@ exit_message:
 		printf("\n\t-hidden: dump hidden item data (only items, excludes hidden objects)");
 		printf("\n\t-typestable: dump type effectiveness table (all combinations not in table are neutral damage)");
 		printf("\n\t-trainers: dump trainer teams based on trainer class");
+		printf("\n\t-maps: dump map header data (offsets, number of NPC, trainers, items...)");
         my_exit();
 	}
 	int current_argument = 1;
@@ -129,6 +135,10 @@ exit_message:
     else if( !strcmp(argv[current_argument], "-trainers") )
 	{
         mode = DUMP_TRAINERS;
+	}
+    else if( !strcmp(argv[current_argument], "-maps") )
+	{
+        mode = DUMP_MAPS;
 	}
 	else
     {
@@ -376,6 +386,10 @@ exit_message:
     {
         ProcessTrainerData(romBuffer);
     }
+        else if (mode == DUMP_MAPS)
+    {
+        ProcessMapData(romBuffer);
+    }
 
     //Save output
 #ifdef SWAP_PICS
@@ -411,9 +425,390 @@ uint16_t Get2bytePointerFromTable(int index, char*buffer, int tableOffset)
 
 }
 
+uint16_t Get2bytePointerFromBuffer(char*buffer, int Offset)
+{
+    return Get2bytePointerFromTable(0, buffer, Offset);
+}
+
 int GetFullPointerFromTable(int index, char*buffer, int tableOffset, int bank)
 {
     return ThreeByteToTwoByte(bank, Get2bytePointerFromTable(index, buffer, tableOffset));
+}
+
+/*
+char* getMovement(uint8_t movement)
+{
+    char *returnString;
+    switch(movement)
+    {
+        case 0xFE:
+            strcpy(returnString, "WALK");
+            break;
+        case 0xFF:
+            strcpy(returnString, "STAY/NONE");
+            break;
+        case 0x00:
+            strcpy(returnString, "ANY_DIR");
+            break;
+        case 0x01:
+            strcpy(returnString, "UP_DOWN");
+            break;
+        case 0x02:
+            strcpy(returnString, "LEFT_RIGHT");
+            break;
+        case 0xD0:
+            strcpy(returnString, "DOWN");
+            break;
+        case 0xD1:
+            strcpy(returnString, "UP");
+            break;
+        case 0xD2:
+            strcpy(returnString, "LEFT");
+            break;
+        case 0xD3:
+            strcpy(returnString, "RIGHT");
+            break;
+        default:
+            strcpy(returnString, "UNKNOWN");
+            break;
+    }
+
+    return returnString;
+}
+*/
+char* getMovement(uint8_t movement)
+{
+    switch(movement)
+    {
+        case 0xFE:
+            return "WALK";
+            break;
+        case 0xFF:
+            return "STAY/NONE";
+            break;
+        case 0x00:
+            return "ANY_DIR";
+            break;
+        case 0x01:
+            return "UP_DOWN";
+            break;
+        case 0x02:
+            return "LEFT_RIGHT";
+            break;
+        case 0xD0:
+            return "DOWN";
+            break;
+        case 0xD1:
+            return "UP";
+            break;
+        case 0xD2:
+            return "LEFT";
+            break;
+        case 0xD3:
+            return "RIGHT";
+            break;
+        default:
+            return "unknown";
+            break;
+    }
+}
+
+/*
+1 byte  - Tileset ID
+1 byte  - (Y Size) Map height
+1 byte  - (X Size) Map width
+2 bytes - Pointer to map data
+2 bytes - Pointer to text pointers
+2 bytes - Pointer to script
+1 byte  - Connection Byte
+11 bytes per connection - Connection data (No connections? Straight to object data!)
+2 bytes - Pointer to object data
+*/
+
+void ProcessMapData (char*buffer)
+{
+    int i = 0;
+    int mapHeaderOffset = 0;
+    int mapBank = 0;
+    uint16_t tempPointer = 0;
+    int tempFullPointer = 0;
+    int textPointersOffset = 0;
+    int objectDataOffset = 0;
+    int warpNumber = 0;
+    int signpostNumber = 0;
+    int npcNumber = 0;
+    uint8_t text_ID = 0;
+    uint8_t connectionByte = 0;
+
+    int eventMapWidth = 0;
+    int eventMapHeight = 0;
+    for (i=0;i<=totalmaps;i++)
+    {
+       // if (i == 1) continue;
+        //Get pointer from header table
+        mapBank = (int8_t)buffer[MapHeaderBanks+i];
+        mapHeaderOffset = GetFullPointerFromTable(i, buffer, MapHeaderPointers, mapBank);
+
+        printf("Map %d: %s (Header: 0x%02X (%02X:%02X))\n", i, MapNames[i], mapHeaderOffset, mapBank, TwoByteOffset(mapHeaderOffset));
+
+        //Dump Header Data
+        eventMapWidth = ((buffer[mapHeaderOffset+2]&0xFF)*2)-1;
+        eventMapHeight = ((buffer[mapHeaderOffset+1]&0xFF)*2)-1;
+        printf("\t Tileset:0x%02X \t\tMap Height (Y): %02d (%02d for events) \tMap Width (X): %02d (%02d for events)\n", buffer[mapHeaderOffset], buffer[mapHeaderOffset+1], eventMapHeight+1, buffer[mapHeaderOffset+2], eventMapWidth+1);
+
+        //Map data pointer
+        mapHeaderOffset += 3;
+        tempPointer = Get2bytePointerFromBuffer(buffer, mapHeaderOffset);
+        tempFullPointer = ThreeByteToTwoByte(mapBank, tempPointer);
+        printf("\t Map Data: 0x%04X (%02X:%04X)\n", tempFullPointer, mapBank, tempPointer);
+
+        //Text pointers
+        mapHeaderOffset += 2;
+        tempPointer = Get2bytePointerFromBuffer(buffer, mapHeaderOffset);
+        tempFullPointer = ThreeByteToTwoByte(mapBank, tempPointer);
+        textPointersOffset = tempFullPointer; //Store where text pointers are for later usage on object data
+        printf("\t Text Pointers: 0x%04X (%02X:%04X)\n", tempFullPointer, mapBank, tempPointer);
+
+        //Script
+        mapHeaderOffset += 2;
+        tempPointer = Get2bytePointerFromBuffer(buffer, mapHeaderOffset);
+        tempFullPointer = ThreeByteToTwoByte(mapBank, tempPointer);
+        printf("\t Script: 0x%04X (%02X:%04X)\n", tempFullPointer, mapBank, tempPointer);
+
+        //Connection
+        /*
+        1 byte connections
+        11 bytes per connection
+            00 = No Connections
+            01 = East
+            02 = West
+            03 = West + East
+            04 = South
+            05 = South + East
+            06 = South + West
+            07 = South + West + East
+            08 = North
+            09 = North + East
+            0A = North + West
+            0B = North + West + East
+            0C = North + South
+            0D = North + South + East
+            0E = North + South + West
+            0F = North + South + West + East
+        */
+        mapHeaderOffset += 2;
+        connectionByte = (uint8_t)buffer[mapHeaderOffset];
+        mapHeaderOffset ++;
+        switch (connectionByte)
+        {
+            case 0x01:
+            case 0x02:
+            case 0x04:
+            case 0x08:
+                printf("\t One map connection, 0x%02X\n", connectionByte);
+                mapHeaderOffset += 11;
+                break;
+            case 0x03:
+            case 0x05:
+            case 0x06:
+            case 0x09:
+            case 0x0A:
+            case 0x0C:
+                printf("\t Two map connections, 0x%02X\n", connectionByte);
+                mapHeaderOffset += 22;
+                break;
+            case 0x07:
+            case 0x0B:
+            case 0x0D:
+            case 0x0E:
+                printf("\t Three map connections, 0x%02X\n", connectionByte);
+                mapHeaderOffset += 33;
+                break;
+            case 0x0F:
+                printf("\t Four map connections, 0x%02X\n", connectionByte);
+                mapHeaderOffset += 44;
+                break;
+            case 0x00:
+                printf("\t No map connection data, 0x%02X\n", connectionByte);
+                break;
+            default:
+                printf("\t Unrecognized map connection data, 0x%02X\n", connectionByte);
+                break;
+
+        }
+
+        //ObjectData
+        tempPointer = Get2bytePointerFromBuffer(buffer, mapHeaderOffset);
+        tempFullPointer = ThreeByteToTwoByte(mapBank, tempPointer);
+        objectDataOffset = tempFullPointer;
+
+        /*
+        1 byte  - Border block ID
+        1 byte  - Number of warps
+        4 bytes per warp - Warp data
+        1 byte  - Number of signs
+        3 bytes per sign - Sign data
+        1 byte  - Number of NPCs (total)
+        6/8/7 bytes per NPC - NPC data
+        4 bytes per warp-to - Warp-To data
+        */
+
+        printf("\t Object Data: 0x%04X (%02X:%04X)\n", objectDataOffset, mapBank, tempPointer);
+        printf("\t\t Block ID: 0x%02X (0x%X)\n", (uint8_t)buffer[objectDataOffset], objectDataOffset);
+        //Warps
+        /*
+        1 byte  - Y position
+        1 byte  - X position
+        1 byte  - Destination warp-to's ID (within target map)
+        1 byte  - Destination map
+        */
+        objectDataOffset += 1;
+        warpNumber = (uint8_t)buffer[objectDataOffset];
+        if (warpNumber > 30)
+        {
+            printf("\n\t\t Too many warps: %02d (0x%X), assuming corrupted/deleted map\n");
+            continue;
+        }
+        printf("\n\t\t Total warps: %02d (0x%X)\n", warpNumber, objectDataOffset);
+        objectDataOffset += 1;
+        int j = 0;
+        for (j=0;j<warpNumber;j++)
+        {
+            if ((buffer[objectDataOffset]&0xFF) > eventMapHeight || (buffer[objectDataOffset+1]&0xFF) > eventMapWidth)
+                printf("\t\t\t Out of bounds Warp #%02d: Y:%02d, X:%02d, Warp-To ID: %02d, Dest Map: %s\n", j, (uint8_t)buffer[objectDataOffset], (uint8_t)buffer[objectDataOffset+1], (uint8_t)buffer[objectDataOffset+2], MapNames[(uint8_t)buffer[objectDataOffset+3]] );
+            else
+                printf("\t\t\t Warp #%02d: Y:%02d, X:%02d, Warp-To ID: %02d, Dest Map: %s\n", j, (uint8_t)buffer[objectDataOffset], (uint8_t)buffer[objectDataOffset+1], (uint8_t)buffer[objectDataOffset+2], MapNames[(uint8_t)buffer[objectDataOffset+3]] );
+            objectDataOffset+=4;
+
+        }
+
+        //Signposts
+        /*
+        1 byte number of signs
+        3 byte per signpost
+            1 byte  - Y position
+            1 byte  - X position
+            1 byte  - Text string ID
+        */
+        signpostNumber = (uint8_t)buffer[objectDataOffset];
+        printf("\n\t\t Signposts: %02d (0x%X)\n", buffer[objectDataOffset], objectDataOffset);
+        objectDataOffset++;
+        for (j=0; j<signpostNumber;j++)
+        {
+            text_ID = (uint8_t)buffer[objectDataOffset+2];
+            if ((buffer[objectDataOffset]&0xFF) > eventMapHeight || (buffer[objectDataOffset+1]&0xFF) > eventMapWidth)
+            printf("\t\t\t Out of Bounds Sign #%02d: Y:%02d, X:%02d, Text ID: %d (0x%04X)\n", j, (uint8_t)buffer[objectDataOffset], (uint8_t)buffer[objectDataOffset+1], (uint8_t)buffer[objectDataOffset+2], (int)ThreeByteToTwoByte(mapBank, Get2bytePointerFromBuffer(buffer, textPointersOffset+((text_ID-1)*2))) );
+            else
+                printf("\t\t\t Sign #%02d: Y:%02d, X:%02d, Text ID: %d (0x%04X)\n", j, (uint8_t)buffer[objectDataOffset], (uint8_t)buffer[objectDataOffset+1], (uint8_t)buffer[objectDataOffset+2], (int)ThreeByteToTwoByte(mapBank, Get2bytePointerFromBuffer(buffer, textPointersOffset+((text_ID-1)*2))) );
+            objectDataOffset+=3;
+        }
+
+        //NPC/TRAINER/ITEM Data
+        /*
+        1 byte  - Picture number
+        1 byte  - Y position + 4
+        1 byte  - X position + 4
+        1 byte  - Movement 1
+        1 byte  - Movement 2
+        1 byte  - Text string ID
+        1 byte  - Pokémon species ID / Trainer class || ITEM ID //Only item/trainers have this byte
+        1 byte  - Pokemon level / Trainer's roster ID //Only trainers / pokémon encounters have this byte
+
+        In order to distinguish People, Trainers and Items, you must check the text string ID:
+        strID & (1 << 6) != 0 : Trainer (2 extra bytes, the trainer class and roster IDs)
+        strID & (1 << 7) != 0 -> Item (1 extra byte, the item ID)
+
+        */
+        npcNumber = (uint8_t)buffer[objectDataOffset];
+        printf("\n\t\t NPC/Item/Trainer Data: %02d (0x%X)\n", buffer[objectDataOffset], objectDataOffset);
+        objectDataOffset++;
+        int z = 0;
+        int currentEntry = 0;
+        int tempOffset = objectDataOffset;
+        for (z=0;z<3;z++)//Loop to dump NPC data in order: NPC, Trainers, Items
+        {
+            objectDataOffset = tempOffset;//Restart offset to go through all entries again
+            currentEntry = 0;
+            if (z==0)
+            {
+                printf("\n\t\t\tNPC:\n");
+            }
+            else if (z==1)
+            {
+                printf("\n\t\t\tTRAINER:\n");
+            }
+            else if (z==2)
+            {
+                printf("\n\t\t\tITEM:\n");
+            }
+            for (j=0; j<npcNumber ;j++)
+            {
+                text_ID = (uint8_t)buffer[objectDataOffset+5];
+
+                if ( (text_ID&0x40) !=0 )//Trainer
+                {
+                    if ( z == 1)
+                    {
+                        text_ID = text_ID^0x40;
+                        printf("\t\t\t   Entry #%d: 0x%02X %s (0x%X)", currentEntry+1, ((uint8_t)buffer[objectDataOffset+6]-0xc8), TRAINER_CLASS[((uint8_t)buffer[objectDataOffset+6]-0xc8)], objectDataOffset);
+                        if ( ((buffer[objectDataOffset+1]&0xFF) > eventMapHeight) || ((buffer[objectDataOffset+2]&0xFF) > eventMapWidth))
+                            printf("\n\t\t\tOUT OF BOUNDS!\n");
+                        else
+                         printf ("\n");
+                        printf("\t\t\t\t     Sprite: %d, Y: %02d, X: %02d, Movement1: %s, Movement2: %s\n", (int8_t)buffer[objectDataOffset], (int8_t)buffer[objectDataOffset+1], (int8_t)buffer[objectDataOffset+2], getMovement(buffer[objectDataOffset+3]), getMovement(buffer[objectDataOffset+4]) );
+                        printf("\t\t\t\t     TextID %02d (0x%X), Team#: %02d\n", text_ID, (int)ThreeByteToTwoByte(mapBank, Get2bytePointerFromBuffer(buffer, textPointersOffset+((text_ID-1)*2))), (int8_t)buffer[objectDataOffset+7] );
+                    }
+                    objectDataOffset += 8;
+                    currentEntry++;
+
+                }
+                else if ((text_ID&0x80) != 0)//Item
+                {
+                     if ( z == 2)
+                    {
+                        text_ID = text_ID^0x80;
+                        printf("\t\t\t   Entry #%d: 0x%02X %s (0x%X)", currentEntry+1, (int8_t)buffer[objectDataOffset+6]&0x000000ff, ItemName[(int8_t)buffer[objectDataOffset+6]&0x000000ff], objectDataOffset);
+                        if ((buffer[objectDataOffset+1]&0xFF) > eventMapHeight || (buffer[objectDataOffset+2]&0xFF) > eventMapWidth)
+                            printf("\n\t\t\tOUT OF BOUNDS!\n");
+                        else
+                         printf ("\n");
+                        printf("\t\t\t\t     Sprite: %d, Y: %02d, X: %02d, Movement1: %s, Movement2: %s\n", (int8_t)buffer[objectDataOffset], (int8_t)buffer[objectDataOffset+1], (int8_t)buffer[objectDataOffset+2], getMovement(buffer[objectDataOffset+3]), getMovement(buffer[objectDataOffset+4]) );
+                        printf("\t\t\t\t     TextID %02d (0x%X)\n", text_ID, (int)ThreeByteToTwoByte(mapBank, Get2bytePointerFromBuffer(buffer, textPointersOffset+((text_ID-1)*2))));
+                    }
+                    objectDataOffset += 7;
+                    currentEntry++;
+                }
+                else if ( ((text_ID&0x80) == 0) && ((text_ID&0x40) == 0) ) //NPC
+                {
+
+                    if ( z == 0)
+                    {
+                        //printf("\t\t\t #%d: NPC Sprite: %d, Y: %02d, X: %02d\n", npcNumber, (uint8_t)buffer[objectDataOffset], buffer[objectDataOffset+1], buffer[objectDataOffset+2] );
+                        printf("\t\t\t   Entry #%d: NPC (0x%X)", currentEntry+1, objectDataOffset);
+                        if ((buffer[objectDataOffset+1]&0xFF) > eventMapHeight || (buffer[objectDataOffset+2]&0xFF) > eventMapWidth)
+                            printf("\n\t\t\tOUT OF BOUNDS!\n");
+                        else
+                         printf ("\n");
+                        printf("\t\t\t\t     Sprite: %d, Y: %02d, X: %02d, Movement1: %s, Movement2: %s\n", (uint8_t)buffer[objectDataOffset], (int8_t)buffer[objectDataOffset+1], (int8_t)buffer[objectDataOffset+2], getMovement(buffer[objectDataOffset+3]), getMovement(buffer[objectDataOffset+4]) );
+                        printf("\t\t\t\t     TextID %02d (0x%X)\n", text_ID, (int)ThreeByteToTwoByte(mapBank, Get2bytePointerFromBuffer(buffer, textPointersOffset+((text_ID-1)*2))));
+                    }
+                    objectDataOffset += 6;
+                    currentEntry++;
+                }
+            }
+        }
+
+        //Warp To data
+        /*
+        ;\1 x position
+        ;\2 y position
+        ;\3 map width (double word)
+        */
+        printf("\n\t\t Warp To Data (To do)\n");
+
+        printf("\n\n");
+
+    }
 }
 
 void ProcessTrainerData (char*buffer)
