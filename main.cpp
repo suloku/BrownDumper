@@ -552,9 +552,9 @@ void ProcessMapData (char*buffer)
         printf("Map %d: %s (Header: 0x%02X (%02X:%02X))\n", i, MapNames[i], mapHeaderOffset, mapBank, TwoByteOffset(mapHeaderOffset));
 
         //Dump Header Data
-        eventMapWidth = ((buffer[mapHeaderOffset+2]&0xFF)*2)-1;
-        eventMapHeight = ((buffer[mapHeaderOffset+1]&0xFF)*2)-1;
-        printf("\t Tileset:0x%02X \t\tMap Height (Y): %02d (%02d for events) \tMap Width (X): %02d (%02d for events)\n", buffer[mapHeaderOffset], buffer[mapHeaderOffset+1], eventMapHeight+1, buffer[mapHeaderOffset+2], eventMapWidth+1);
+        eventMapWidth = ((buffer[mapHeaderOffset+2]&0xFF)*2);
+        eventMapHeight = ((buffer[mapHeaderOffset+1]&0xFF)*2);
+        printf("\t Tileset:0x%02X \t\tMap Height (Y): %02d (%02d for events) \tMap Width (X): %02d (%02d for events)\n", buffer[mapHeaderOffset], buffer[mapHeaderOffset+1], eventMapHeight-1, buffer[mapHeaderOffset+2], eventMapWidth-1);
 
         //Map data pointer
         mapHeaderOffset += 3;
@@ -751,11 +751,12 @@ void ProcessMapData (char*buffer)
                     {
                         text_ID = text_ID^0x40;
                         printf("\t\t\t   Entry #%d: 0x%02X %s (0x%X)", currentEntry+1, ((uint8_t)buffer[objectDataOffset+6]-0xc8), TRAINER_CLASS[((uint8_t)buffer[objectDataOffset+6]-0xc8)], objectDataOffset);
-                        if ( ((buffer[objectDataOffset+1]&0xFF) > eventMapHeight) || ((buffer[objectDataOffset+2]&0xFF) > eventMapWidth))
+                        if ( ((buffer[objectDataOffset+1]&0xFF)-4 > eventMapHeight) || ((buffer[objectDataOffset+2]&0xFF)-4 > eventMapWidth))
                             printf("\n\t\t\tOUT OF BOUNDS!\n");
                         else
                          printf ("\n");
-                        printf("\t\t\t\t     Sprite: %d, Y: %02d, X: %02d, Movement1: %s, Movement2: %s\n", (int8_t)buffer[objectDataOffset], (int8_t)buffer[objectDataOffset+1], (int8_t)buffer[objectDataOffset+2], getMovement(buffer[objectDataOffset+3]), getMovement(buffer[objectDataOffset+4]) );
+                        printf("\t\t\t\t     Sprite: %d, Y: %02d (%02d on map), X: %02d (%02d on map)\n", (int8_t)buffer[objectDataOffset], (int8_t)buffer[objectDataOffset+1],(int8_t)buffer[objectDataOffset+1]-4, (int8_t)buffer[objectDataOffset+2],(int8_t)buffer[objectDataOffset+2]-4 );
+                        printf("\t\t\t\t     Movement1: %s, Movement2: %s\n", getMovement(buffer[objectDataOffset+3]), getMovement(buffer[objectDataOffset+4]) );
                         printf("\t\t\t\t     TextID %02d (0x%X), Team#: %02d\n", text_ID, (int)ThreeByteToTwoByte(mapBank, Get2bytePointerFromBuffer(buffer, textPointersOffset+((text_ID-1)*2))), (int8_t)buffer[objectDataOffset+7] );
                     }
                     objectDataOffset += 8;
@@ -768,11 +769,12 @@ void ProcessMapData (char*buffer)
                     {
                         text_ID = text_ID^0x80;
                         printf("\t\t\t   Entry #%d: 0x%02X %s (0x%X)", currentEntry+1, (int8_t)buffer[objectDataOffset+6]&0x000000ff, ItemName[(int8_t)buffer[objectDataOffset+6]&0x000000ff], objectDataOffset);
-                        if ((buffer[objectDataOffset+1]&0xFF) > eventMapHeight || (buffer[objectDataOffset+2]&0xFF) > eventMapWidth)
+                        if ((buffer[objectDataOffset+1]&0xFF)-4 > eventMapHeight || (buffer[objectDataOffset+2]&0xFF)-4 > eventMapWidth)
                             printf("\n\t\t\tOUT OF BOUNDS!\n");
                         else
                          printf ("\n");
-                        printf("\t\t\t\t     Sprite: %d, Y: %02d, X: %02d, Movement1: %s, Movement2: %s\n", (int8_t)buffer[objectDataOffset], (int8_t)buffer[objectDataOffset+1], (int8_t)buffer[objectDataOffset+2], getMovement(buffer[objectDataOffset+3]), getMovement(buffer[objectDataOffset+4]) );
+                        printf("\t\t\t\t     Sprite: %d, Y: %02d (%02d on map), X: %02d (%02d on map)\n", (int8_t)buffer[objectDataOffset], (int8_t)buffer[objectDataOffset+1],(int8_t)buffer[objectDataOffset+1]-4, (int8_t)buffer[objectDataOffset+2],(int8_t)buffer[objectDataOffset+2]-4 );
+                        printf("\t\t\t\t     Movement1: %s, Movement2: %s\n", getMovement(buffer[objectDataOffset+3]), getMovement(buffer[objectDataOffset+4]) );
                         printf("\t\t\t\t     TextID %02d (0x%X)\n", text_ID, (int)ThreeByteToTwoByte(mapBank, Get2bytePointerFromBuffer(buffer, textPointersOffset+((text_ID-1)*2))));
                     }
                     objectDataOffset += 7;
@@ -785,11 +787,12 @@ void ProcessMapData (char*buffer)
                     {
                         //printf("\t\t\t #%d: NPC Sprite: %d, Y: %02d, X: %02d\n", npcNumber, (uint8_t)buffer[objectDataOffset], buffer[objectDataOffset+1], buffer[objectDataOffset+2] );
                         printf("\t\t\t   Entry #%d: NPC (0x%X)", currentEntry+1, objectDataOffset);
-                        if ((buffer[objectDataOffset+1]&0xFF) > eventMapHeight || (buffer[objectDataOffset+2]&0xFF) > eventMapWidth)
+                        if ((buffer[objectDataOffset+1]&0xFF)-4 > eventMapHeight || (buffer[objectDataOffset+2]&0xFF)-4 > eventMapWidth)
                             printf("\n\t\t\tOUT OF BOUNDS!\n");
                         else
                          printf ("\n");
-                        printf("\t\t\t\t     Sprite: %d, Y: %02d, X: %02d, Movement1: %s, Movement2: %s\n", (uint8_t)buffer[objectDataOffset], (int8_t)buffer[objectDataOffset+1], (int8_t)buffer[objectDataOffset+2], getMovement(buffer[objectDataOffset+3]), getMovement(buffer[objectDataOffset+4]) );
+                        printf("\t\t\t\t     Sprite: %d, Y: %02d (%02d on map), X: %02d (%02d on map)\n" , (uint8_t)buffer[objectDataOffset], (int8_t)buffer[objectDataOffset+1],(int8_t)buffer[objectDataOffset+1]-4, (int8_t)buffer[objectDataOffset+2],(int8_t)buffer[objectDataOffset+2]-4);
+                        printf("\t\t\t\t     Movement1: %s, Movement2: %s\n", getMovement(buffer[objectDataOffset+3]), getMovement(buffer[objectDataOffset+4]) );
                         printf("\t\t\t\t     TextID %02d (0x%X)\n", text_ID, (int)ThreeByteToTwoByte(mapBank, Get2bytePointerFromBuffer(buffer, textPointersOffset+((text_ID-1)*2))));
                     }
                     objectDataOffset += 6;
@@ -798,6 +801,7 @@ void ProcessMapData (char*buffer)
             }
         }
 
+        printf("\n\tNote: NPC, Trainer and Item Sprite XY coords are stored with +4 relative to map coords\n");
         //Warp To data
         /*
         ;\1 x position
