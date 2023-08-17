@@ -1432,14 +1432,25 @@ uint16_t swap_uint16( uint16_t val )
 
 int ThreeByteToTwoByte (int bank, uint16_t off)
 {
-    return ((bank * 0x4000) + (off - 0x4000));
+    if ( off < 0x4000)
+    {
+        return off;
+    }
+    else if(off >= 0x8000)
+    {
+        return -1;
+    }
+    else
+    {
+        return ((bank * 0x4000) + (off - 0x4000));
+    }
 }
-
+/*
 int ThreeByteToTwoByteBswap (int bank, uint16_t off)
 {
     return ((bank * 0x4000) + (swap_uint16(off) - 0x4000));
 }
-
+*/
 int getBank (int off)
 {
     return off / 0x4000;
