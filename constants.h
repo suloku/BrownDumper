@@ -1987,6 +1987,64 @@ const char *TypesTable[]=
 
 const int TypesMatchesIds[]=
 {
+    0x07, //Bug
+    0x1B, //Dark
+    0x1A, //Dragon
+    0x17, //Electric
+    0x1F, //Fairy
+    0x01, //Fighting
+    0x14, //Fire
+    0x02, //Flying
+    0x08, //Ghost
+    0x16, //Grass
+    0x04, //Ground
+    0x19, //Ice
+    0x00, //Normal
+    0x03, //Poison
+    0x18, //Psychic
+    0x05, //Rock
+    0x09, //Steel
+    0x15, //Water
+    0x0E, //Sound
+    0x1D, //Gas
+    0x1E, //Abnormal
+    0x0D, //Wind
+    0x1C, //Wood
+    0x0F //Tri
+};
+
+const char* TypesMatchesNames[]=
+{
+    "BUG     ",            //$07
+    "DARK    ", //$1B
+	"DRAGON  ",       //$1A
+	"ELECTR  ",     //$17
+    "FAIRY   ", //$1F
+	"FIGHTING",       //$01
+    "FIRE    ",         //$14
+	"FLYING  ",         //$02
+	"GHOST   ",          //$08
+	"GRASS   ",       //$16
+	"GROUND  ",         //$04
+	"ICE     ",          //$19
+	"NORMAL  ",       //$00
+	"POISON  ",         //$03
+	"PSYCHIC ", //$18
+	"ROCK    ",           //$05
+    "STEEL   ",    //&09
+	"WATER   ",        //$15
+    "SOUND   ", //$0E
+    "GAS     ", //1D
+    "ABNORMAL", //$1E
+    "WIND    ", //$0D
+    "WOOD    ", //$1C
+    "TRI     ", //$0F
+    NULL
+};
+
+/*
+const int TypesMatchesIds[]=
+{
     0x00, //Normal
     0x01, //Fighting
     0x02, //Flying
@@ -2041,7 +2099,7 @@ const char* TypesMatchesNames[]=
     "FAIRY   ", //$1F
     NULL
 };
-
+*/
 const char *TM_HM[]=
 {
     "TM01: Dynamicpunch",

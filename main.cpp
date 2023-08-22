@@ -507,6 +507,9 @@ char* getMovement(uint8_t movement)
         case 0xD3:
             return "RIGHT";
             break;
+        case 0x10:
+            return "BOULDER_MOVEMENT_BYTE_2";
+            break;
         default:
             return "unknown";
             break;
@@ -664,7 +667,7 @@ void ProcessMapData (char*buffer)
         */
         objectDataOffset += 1;
         warpNumber = (uint8_t)buffer[objectDataOffset];
-        if (warpNumber > 30)
+        if (warpNumber > 35)
         {
             printf("\n\t\t Too many warps: %02d (0x%X), assuming corrupted/deleted map\n");
             continue;
@@ -819,6 +822,8 @@ void ProcessTrainerData (char*buffer)
 {
     int TrainerPicAndMoneyPointers = 0x101914; //Repointed in brown to 40:5914
     int BANK_TrainerPicAndMoneyPointers = 0x40;
+    //int BANK_TrainerPics = 0x13; //In old brown as well as Red
+    int BANK_TrainerPics = 0x77;
     int TrainerAIPointers = 0x3a55c;
     int BANK_TrainerAIPointers = 0x0e;
     int TrainerClassMoveChoiceModifications = 0x3989B;
@@ -837,6 +842,8 @@ void ProcessTrainerData (char*buffer)
     int pointer = 0;
     uint16_t u16temp = 0;
 
+    printf("NOTE: Picture sprites have been moved to bank 0x%02X in Brown (hardcoded)\n\n", BANK_TrainerPicAndMoneyPointers);
+
     int i = 0;
     for (i=0;i<totalclasses;i++)
     {
@@ -848,8 +855,9 @@ void ProcessTrainerData (char*buffer)
         // pic pointer, base reward money
         // money received after battle = base money × level of last enemy mon
         pointer = TrainerPicAndMoneyPointers+(5*i);
+        memcpy(&u16temp, buffer+pointer, 2);
         printf ("\t Money: %02X%02X%02X\t\t", (uint8_t)buffer[pointer+2], (uint8_t)buffer[pointer+3], (uint8_t)buffer[pointer+4]);
-        printf ("Picture Offset: 0x%02X%02X", (uint8_t)buffer[pointer+1], (uint8_t)buffer[pointer]);
+        printf ("Picture Offset: %0x:%04X (0x%X)", BANK_TrainerPics, u16temp, ThreeByteToTwoByte(BANK_TrainerPics, u16temp));
         printf ("\t\t(Data offset: 0x%X)\n", pointer);
 
         //Print AI
