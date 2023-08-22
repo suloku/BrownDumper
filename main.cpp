@@ -6,6 +6,7 @@
 #include "constants.h"
 
 //#define DEBUG
+//#define TPP
 
 //Tracker for output formatting
 //Output "browndumper.exe -dumpcsv -moves rom.gb >> moves.csv" to get a move list in a CSV file format
@@ -822,8 +823,11 @@ void ProcessTrainerData (char*buffer)
 {
     int TrainerPicAndMoneyPointers = 0x101914; //Repointed in brown to 40:5914
     int BANK_TrainerPicAndMoneyPointers = 0x40;
+#ifdef TPP
     //int BANK_TrainerPics = 0x13; //In old brown as well as Red
+#else
     int BANK_TrainerPics = 0x77;
+#endif // TPP
     int TrainerAIPointers = 0x3a55c;
     int BANK_TrainerAIPointers = 0x0e;
     int TrainerClassMoveChoiceModifications = 0x3989B;
