@@ -8,6 +8,8 @@
 //#define DEBUG
 //#define TPP
 
+int dumphiddenobjectarray = 0;
+
 //Tracker for output formatting
 //Output "browndumper.exe -dumpcsv -moves rom.gb >> moves.csv" to get a move list in a CSV file format
 int comadump = 0;
@@ -29,7 +31,7 @@ void ProcessBasestats (char*buffer);
 void ProcessEvoMoves (char*buffer);
 void ProcessMoveData (char*buffer);
 void ProcessWildData (char*buffer);
-void ProcessHiddenData (char*buffer, int offset);
+void ProcessHiddenData (char*buffer, int offset, char mapgame);
 void ProcessTypeTableData (char*buffer);
 void ProcessTrainerData (char*buffer);
 void ProcessMapData (char*buffer);
@@ -367,17 +369,20 @@ exit_message:
             curHiddenOffset = ThreeByteToTwoByte(hiddenObjectsBank, HiddenOffsetU16);
 
            // Read hidden data
-           //printf("%i: Map %s (0x%02X) (Hidden data offset: 0x%04X) (Pointer at: 0x%04X)\n", i, MapNames[(uint8_t)(romBuffer[HiddenObjectMapsOffset+i])], (uint8_t)romBuffer[HiddenObjectMapsOffset+i], curHiddenOffset, HiddenObjectPointersOffset+(2*i));
-            printf("%i: ", i);
-            printf("Map %s ", MapNames[(uint8_t)(romBuffer[HiddenObjectMapsOffset+i])]);
-            //printf("(0x%02X) ", (uint8_t)romBuffer[HiddenObjectMapsOffset+i]);
-            printf("(Hidden data offset: 0x%04X) ", curHiddenOffset);
-            printf("(Pointer at: 0x%04X)\n", HiddenObjectPointersOffset+(2*i));
+				//printf("%i: Map %s (0x%02X) (Hidden data offset: 0x%04X) (Pointer at: 0x%04X)\n", i, MapNames[(uint8_t)(romBuffer[HiddenObjectMapsOffset+i])], (uint8_t)romBuffer[HiddenObjectMapsOffset+i], curHiddenOffset, HiddenObjectPointersOffset+(2*i));
+			if (!dumphiddenobjectarray)
+			{
+				printf("%i: ", i);
+				printf("Map %s ", MapNames[(uint8_t)(romBuffer[HiddenObjectMapsOffset+i])]);
+					//printf("(0x%02X) ", (uint8_t)romBuffer[HiddenObjectMapsOffset+i]);
+				printf("(Hidden data offset: 0x%04X) ", curHiddenOffset);
+				printf("(Pointer at: 0x%04X)\n", HiddenObjectPointersOffset+(2*i));
+			}
 
-           ProcessHiddenData(romBuffer+curHiddenOffset, curHiddenOffset);
+           ProcessHiddenData(romBuffer+curHiddenOffset, curHiddenOffset, (romBuffer[HiddenObjectMapsOffset+i])&0x000000ff );
 
         }//all maps read
-        //printf("\n\n Hidden Data read");
+		//if (!dumphiddenobjectarray) printf("\n\n Hidden Data read");
     }
     else if (mode == DUMP_TYPETABLE)
     {
@@ -959,6 +964,7 @@ void ProcessTrainerData (char*buffer)
             //Read team level + species
             if ((uint8_t)buffer[curpointer] == 0xFF) //Level + species
             {
+                printf("(SpecialTrainer) ");
                 curpointer++; //advance
                 while (buffer[curpointer] != 0) //Team end
                 {
@@ -1008,7 +1014,7 @@ void ProcessTrainerData (char*buffer)
 
 }
 
-void ProcessHiddenData (char*buffer, int offset)
+void ProcessHiddenData (char*buffer, int offset, char mapgame)
 {
     /*Each hidden item has 6 bytes
     db \2 ; y coord
@@ -1041,18 +1047,27 @@ void ProcessHiddenData (char*buffer, int offset)
         //Others are CableClubRightGameboy, OpenRedsPC, PrintBookcaseText, PrintNotebookText...
         if(predef_pointer == 0x6688)//item
         {
-            printf ("\tObject %d (Addr 0x%4X):\n", cur_object, offset+(cur_object*6));
-            printf ("\t\t X coord: %02d Y coord: %02d\n", x_coord, y_coord);
+			if (!dumphiddenobjectarray)
+			{			
+				printf ("\tObject %d (Addr 0x%4X):\n", cur_object, offset+(cur_object*6));
+				printf ("\t\t X coord: %02d Y coord: %02d\n", x_coord, y_coord);
                 printf ("\t\t Item: %s\n", ItemName[item_text_ID]);
 
-            //No need to print the address for the predef routine
-            //printf ("\t\t Bank: 0x%02X Pointer: 0x%02X\n", predef_bank, predef_pointer);
+				//No need to print the address for the predef routine
+					//printf ("\t\t Bank: 0x%02X Pointer: 0x%02X\n", predef_bank, predef_pointer);
+			}
+			else
+			{
+				printf ("%02X %02X %02X ", (uint8_t)mapgame&0x000000ff, y_coord, x_coord);
+			}
         }
 
         cur_buffer += 6;
         cur_object++;
     }
-    printf("\tTotal hidden objects: %d\n",cur_object );
+	
+	if (!dumphiddenobjectarray) printf("\tTotal hidden objects: %d\n",cur_object );
+	
     return;
 }
 
