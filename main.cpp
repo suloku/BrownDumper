@@ -8,6 +8,16 @@
 //#define DEBUG
 //#define TPP
 
+/*
+Used in -hiddenHex to dump an array of "MAP X Y" hex data for all hidden items,
+built from the data in hidden_objects: https://github.com/pret/pokered/blob/d4d7b91aecf651b06d1f466ecc22b65da234a299/data/events/hidden_objects.asm
+
+The data array built is to be used as the hidden_item_coords table:
+https://github.com/pret/pokered/tree/d4d7b91aecf651b06d1f466ecc22b65da234a299/data/events/hidden_item_coords.asm
+
+Address 0x766b8 (1d:66b8) to 0x7675a (1d:675a), ends with 0xFF
+
+*/
 int dumphiddenobjectarray = 0;
 
 //Tracker for output formatting
@@ -102,7 +112,8 @@ exit_message:
 		printf("\n\t-stats:  dump base stats, evolution data and learnsets");
 		printf("\n\t-moves:  dump move data");
 		printf("\n\t-wild:   dump wild pokémon data");
-		printf("\n\t-hidden: dump hidden item data (only items, excludes hidden objects)");
+		printf("\n\t-hidden: dump hidden object data (only items, excludes other hidden objects)");
+		printf("\n\t-hiddenHex: builds HiddenItemCoords table (\"MAP Y X\" hex data) from the data in hidden_objects");
 		printf("\n\t-typestable: dump type effectiveness table (all combinations not in table are neutral damage)");
 		printf("\n\t-trainers: dump trainer teams based on trainer class");
 		printf("\n\t-maps: dump map header data (offsets, number of NPC, trainers, items...)");
@@ -130,6 +141,12 @@ exit_message:
 	else if( !strcmp(argv[current_argument], "-hidden") )
 	{
         mode = DUMP_HIDDEN;
+		dumphiddenobjectarray = 0;
+	}
+	else if( !strcmp(argv[current_argument], "-hiddenHex") )
+	{
+        mode = DUMP_HIDDEN;
+		dumphiddenobjectarray = 1;
 	}
 	else if( !strcmp(argv[current_argument], "-typestable") )
 	{
@@ -1048,7 +1065,7 @@ void ProcessHiddenData (char*buffer, int offset, char mapgame)
         if(predef_pointer == 0x6688)//item
         {
 			if (!dumphiddenobjectarray)
-			{			
+			{
 				printf ("\tObject %d (Addr 0x%4X):\n", cur_object, offset+(cur_object*6));
 				printf ("\t\t X coord: %02d Y coord: %02d\n", x_coord, y_coord);
                 printf ("\t\t Item: %s\n", ItemName[item_text_ID]);
@@ -1065,9 +1082,9 @@ void ProcessHiddenData (char*buffer, int offset, char mapgame)
         cur_buffer += 6;
         cur_object++;
     }
-	
+
 	if (!dumphiddenobjectarray) printf("\tTotal hidden objects: %d\n",cur_object );
-	
+
     return;
 }
 
