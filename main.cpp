@@ -55,7 +55,7 @@ void ProcessMapData (char*buffer);
         int EvomovesPointerTableOffset = 0x3bdf9;//0e:7df9
         int evomovebank = 0xE;
     //Move data
-        int CriticalListOffset = 0x3e540;
+        int CriticalListOffset = 0x3ff90; //Old offset before repointing was 0x3e540
         int MoveDataOffset = 0x3B250;
         int move_size = 6;
         int totalmoves = 256;
