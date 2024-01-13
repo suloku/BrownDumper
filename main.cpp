@@ -95,20 +95,14 @@ int main (int argc, char** argv)
 
     int mode = NO_DUMP;
 
-    printf("\n");
-    printf("------------------------------------------------------");
-    printf("\nPokémon Brown Data Dumper 1.0 by suloku 2023\n");
-    printf("------------------------------------------------------");
-    printf("\n\n");
-
-    if (argc > 4 || argc < 3 || (argc == 4 && (strcmp(argv[1], "-dumpcsv")!=0)) )
+    if (argc > 4 || argc < 3 || (argc == 4 && (stricmp(argv[1], "-dumpcsv")!=0)) )
     {
 	    if (argc < 3) printf("\nToo few arguments.\n");
 	    if (argc == 4 && strcmp(argv[1], "-dumpcsv")!= 0) printf ("\n%s is not a valid command.\n", argv[1]);
 	    if (argc > 4) printf("\nToo many arguments.\n");
 exit_message:
 		printf("\nUsage:\n%s (-dumpcsv) -[stats|moves|wild|hidden|typestable] ROM%d", argv[0], argc);
-		printf("\n\t-dumpcsv:  dump as CSV format (optional)");
+		printf("\n\t-dumpcsv:  dump as CSV format (optional, supported for -stats, -moves and typestable)");
 		printf("\n\t-stats:  dump base stats, evolution data and learnsets");
 		printf("\n\t-moves:  dump move data");
 		printf("\n\t-wild:   dump wild pokémon data");
@@ -120,43 +114,43 @@ exit_message:
         my_exit();
 	}
 	int current_argument = 1;
-    if( !strcmp(argv[current_argument], "-dumpcsv") )
+    if( !stricmp(argv[current_argument], "-dumpcsv") )
 	{
         comadump = 1;
         current_argument++;
 	}
 
-	if( !strcmp(argv[current_argument], "-stats") )
+	if( !stricmp(argv[current_argument], "-stats") )
 	{
         mode = DUMP_STATS;
 	}
-	else if( !strcmp(argv[current_argument], "-moves") )
+	else if( !stricmp(argv[current_argument], "-moves") )
 	{
         mode = DUMP_MOVE;
 	}
-	else if( !strcmp(argv[current_argument], "-wild") )
+	else if( !stricmp(argv[current_argument], "-wild") )
 	{
         mode = DUMP_WILD;
 	}
-	else if( !strcmp(argv[current_argument], "-hidden") )
+	else if( !stricmp(argv[current_argument], "-hidden") )
 	{
         mode = DUMP_HIDDEN;
 		dumphiddenobjectarray = 0;
 	}
-	else if( !strcmp(argv[current_argument], "-hiddenHex") )
+	else if( !stricmp(argv[current_argument], "-hiddenHex") )
 	{
         mode = DUMP_HIDDEN;
 		dumphiddenobjectarray = 1;
 	}
-	else if( !strcmp(argv[current_argument], "-typestable") )
+	else if( !stricmp(argv[current_argument], "-typestable") )
 	{
         mode = DUMP_TYPETABLE;
 	}
-    else if( !strcmp(argv[current_argument], "-trainers") )
+    else if( !stricmp(argv[current_argument], "-trainers") )
 	{
         mode = DUMP_TRAINERS;
 	}
-    else if( !strcmp(argv[current_argument], "-maps") )
+    else if( !stricmp(argv[current_argument], "-maps") )
 	{
         mode = DUMP_MAPS;
 	}
@@ -166,6 +160,14 @@ exit_message:
 		goto exit_message;
 	}
 
+	if (!comadump)
+    {
+        printf("\n");
+        printf("------------------------------------------------------");
+        printf("\nPokémon Brown Data Dumper 1.0 by suloku 2023\n");
+        printf("------------------------------------------------------");
+        printf("\n\n");
+    }
 
 //Open rom
 
@@ -283,7 +285,7 @@ exit_message:
             if ((uint8_t) romBuffer[CriticalListOffset+cursor] == 0xFF) break;
             if (!comadump)
             {
-                printf("\t%03d %s\n", (uint8_t)romBuffer[CriticalListOffset+cursor], MoveNames[(uint8_t)romBuffer[CriticalListOffset+cursor]]);
+                printf("\t%03d (0x%02X) %s\n", (uint8_t)romBuffer[CriticalListOffset+cursor], (uint8_t)romBuffer[CriticalListOffset+cursor], MoveNames[(uint8_t)romBuffer[CriticalListOffset+cursor]]);
             }
             else
             {
@@ -311,7 +313,7 @@ exit_message:
             //Move names are hardcoded and should be read from the rom, but that would need a character encoding conversion
         if (!comadump)
         {
-            printf("\nMove %03d %s (Address: 0x%X)\n", i, MoveNames[i], MoveDataOffset);
+            printf("\nMove %03d (0x%02X) %s (Address: 0x%X)\n", i, i, MoveNames[i], MoveDataOffset);
         }
         else
         {
