@@ -45,6 +45,7 @@ void ProcessHiddenData (char*buffer, int offset, char mapgame);
 void ProcessTypeTableData (char*buffer);
 void ProcessTrainerData (char*buffer);
 void ProcessMapData (char*buffer);
+void ProcessRodData (char*buffer);
 
 //Constants
     int totalmon = 255;
@@ -76,7 +77,11 @@ void ProcessMapData (char*buffer);
     //Map data
         int MapHeaderPointers = 0x01ae;
         int MapHeaderBanks = 0xc23d;
-
+    //Rod data
+        int GoodRodMons = 0xea96;
+        int GoodRodMons_totalentries = 4;
+        int SuperRodData = 0xe919;
+        int SuperRodDataBank = 0x03;
 
 
 //Work Mode constants
@@ -88,6 +93,7 @@ void ProcessMapData (char*buffer);
 #define DUMP_TYPETABLE 5
 #define DUMP_TRAINERS 6
 #define DUMP_MAPS 7
+#define DUMP_RODS 8
 
 char * romBuffer;
 int main (int argc, char** argv)
@@ -111,6 +117,7 @@ exit_message:
 		printf("\n\t-typestable: dump type effectiveness table (all combinations not in table are neutral damage)");
 		printf("\n\t-trainers: dump trainer teams based on trainer class");
 		printf("\n\t-maps: dump map header data (offsets, number of NPC, trainers, items...)");
+		printf("\n\t-rods: dump rod data (offsets, Pokemon, levels, Super Rod maps...)");
         my_exit();
 	}
 	int current_argument = 1;
@@ -153,6 +160,10 @@ exit_message:
     else if( !stricmp(argv[current_argument], "-maps") )
 	{
         mode = DUMP_MAPS;
+	}
+    else if( !stricmp(argv[current_argument], "-rods") )
+	{
+        mode = DUMP_RODS;
 	}
 	else
     {
@@ -411,9 +422,13 @@ exit_message:
     {
         ProcessTrainerData(romBuffer);
     }
-        else if (mode == DUMP_MAPS)
+    else if (mode == DUMP_MAPS)
     {
         ProcessMapData(romBuffer);
+    }
+    else if (mode == DUMP_RODS)
+    {
+        ProcessRodData(romBuffer);
     }
 
     //Save output
@@ -1468,6 +1483,60 @@ void ProcessTypeTableData (char*buffer)
             printf("\n");//New row for next type
         }
     }
+}
+
+void ProcessRodData (char*buffer)
+{
+    //Hardcoded in the rom
+    printf ("\nOld Rod:");
+    printf ("\n\t 95%% Level 05 Magikarp");
+    printf ("\n\t 05%% Level 30 Gyarados");
+
+    //Good Rod
+    printf("\n\nGood Rod:");
+    //printf("\n\nGood Rod: all 1/%d chance (%02d%%)", GoodRodMons_totalentries, 100/GoodRodMons_totalentries);
+    int i = 0;
+    int curbyte = GoodRodMons;
+    for (i=0; i<GoodRodMons_totalentries; i++)
+    {
+        printf("\n\t %02d%% Level %02d %s", 100/GoodRodMons_totalentries, buffer[curbyte], SpeciesName[buffer[curbyte+1]&0x000000FF]);
+        curbyte +=2;
+    }
+
+    //Super Rod
+     printf("\n\nSuper Rod:\n\n");
+     curbyte = SuperRodData;
+     uint8_t curmap = 0;
+     uint16_t u16curpointer = 0;
+     int curpointer = 0;
+     int curEntry = 0;
+     while (1)
+     {
+         //get map entry
+         memcpy(&curmap, (romBuffer+curbyte), 1);
+         curbyte ++;
+         if (curmap == 0xFF)
+            break;
+
+         //get encounter table
+         memcpy(&u16curpointer, (romBuffer+curbyte), 2);
+         curbyte += 2;
+         curpointer = ThreeByteToTwoByte(SuperRodDataBank, u16curpointer);
+         printf("\tEntry %02d\n\t    Encounter table: %02X:%04X (0x%X)\tMap: %s\n", curEntry, SuperRodDataBank, u16curpointer, curpointer, MapNames[curmap]);
+
+         //Pokemon data
+         int totalmon = romBuffer[curpointer]&0xFF;
+         printf("\t\t Mons in table: %d\n\t\t Fishing chance: %02d%%\n", totalmon, 100/totalmon);
+         curpointer ++;
+         for (i=0;i<totalmon;i++)
+         {
+            printf("\t\t\tLevel %d %s\n", romBuffer[curpointer]&0xFF, SpeciesName[romBuffer[curpointer+1]&0xFF]);
+            curpointer += 2;
+         }
+
+         curEntry++;
+         printf ("\n");
+     }
 }
 
 // Byte swap signed short
