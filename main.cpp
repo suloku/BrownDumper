@@ -111,7 +111,7 @@ exit_message:
 		printf("\n\t-dumpcsv:  dump as CSV format (optional, supported for -stats, -moves and typestable)");
 		printf("\n\t-stats:  dump base stats, evolution data and learnsets");
 		printf("\n\t-moves:  dump move data");
-		printf("\n\t-wild:   dump wild pokémon data");
+		printf("\n\t-wild:   dump wild pokemon data");
 		printf("\n\t-hidden: dump hidden object data (only items, excludes other hidden objects)");
 		printf("\n\t-hiddenHex: builds HiddenItemCoords table (\"MAP Y X\" hex data) from the data in hidden_objects");
 		printf("\n\t-typestable: dump type effectiveness table (all combinations not in table are neutral damage)");
@@ -175,7 +175,7 @@ exit_message:
     {
         printf("\n");
         printf("------------------------------------------------------");
-        printf("\nPokémon Brown Data Dumper 1.0 by suloku 2023\n");
+        printf("\nPokemon Brown Data Dumper 1.0 by suloku 2023\n");
         printf("------------------------------------------------------");
         printf("\n\n");
     }
@@ -369,7 +369,7 @@ exit_message:
             MoveDataOffset += move_size;
         }
     }
-//WILD Pokemom DATA
+//WILD Pokemon DATA
     else if (mode == DUMP_WILD)
     {
         for (int i =0; i<=totalmaps; i++)
@@ -754,8 +754,8 @@ void ProcessMapData (char*buffer)
         1 byte  - Movement 1
         1 byte  - Movement 2
         1 byte  - Text string ID
-        1 byte  - Pokémon species ID / Trainer class || ITEM ID //Only item/trainers have this byte
-        1 byte  - Pokemon level / Trainer's roster ID //Only trainers / pokémon encounters have this byte
+        1 byte  - Pokemon species ID / Trainer class || ITEM ID //Only item/trainers have this byte
+        1 byte  - Pokemon level / Trainer's roster ID //Only trainers / Pokemon encounters have this byte
 
         In order to distinguish People, Trainers and Items, you must check the text string ID:
         strID & (1 << 6) != 0 : Trainer (2 extra bytes, the trainer class and roster IDs)
@@ -896,7 +896,7 @@ void ProcessTrainerData (char*buffer)
         // 2 byte pointer
         // 3 bytes BCD3 money
         // pic pointer, base reward money
-        // money received after battle = base money × level of last enemy mon
+        // money received after battle = base money * level of last enemy mon
         pointer = TrainerPicAndMoneyPointers+(5*i);
         memcpy(&u16temp, buffer+pointer, 2);
         printf ("\t Money: %02X%02X%02X\t\t", (uint8_t)buffer[pointer+2], (uint8_t)buffer[pointer+3], (uint8_t)buffer[pointer+4]);
@@ -906,7 +906,7 @@ void ProcessTrainerData (char*buffer)
         //Print AI
         // 3 byte per entry
         // one entry per trainer class
-        // first byte, number of times (per Pokémon) it can occur
+        // first byte, number of times (per Pokemon) it can occur
         // next two bytes, pointer to AI subroutine for trainer class
         // subroutines are defined in engine/battle/trainer_ai.asm
 
