@@ -412,7 +412,14 @@ exit_message:
            ProcessHiddenData(romBuffer+curHiddenOffset, curHiddenOffset, (romBuffer[HiddenObjectMapsOffset+i])&0x000000ff );
 
         }//all maps read
-		//if (!dumphiddenobjectarray) printf("\n\n Hidden Data read");
+        if (!dumphiddenobjectarray)
+        {
+            //printf("\n\n Hidden Data read");
+        }
+        else if (dumphiddenobjectarray)
+        {
+            printf("\n\nPaste the data over HiddenItemCoords at 0x766b8 (1d:66b8) in the rom.");
+        }
     }
     else if (mode == DUMP_TYPETABLE)
     {
@@ -888,8 +895,10 @@ void ProcessTrainerData (char*buffer)
     printf("NOTE: Picture sprites have been moved to bank 0x%02X in Brown (hardcoded)\n\n", BANK_TrainerPicAndMoneyPointers);
 
     int i = 0;
+    int curtrainerclass = 0;
     for (i=0;i<totalclasses;i++)
     {
+        curtrainerclass = i;
         printf("Trainer Class #%02d: %s (0x%02X)\n", i+1, TRAINER_CLASS[i+1], i+1);
 
         //Print Picture and money
@@ -971,7 +980,8 @@ void ProcessTrainerData (char*buffer)
         int templevel = 0;
         int curteam = 1;
         bool breakflag = false;
-        while (curteam <50)//dump 50 teams per trainer (max is rocket with 41) as there's no way to know when a trainer class's teams stop
+        //while (curteam <50)//dump 50 teams per trainer (max is rocket with 41) as there's no way to know when a trainer class's teams stop
+        while (curteam < TrainerClassTeams[curtrainerclass])
         {
             if (
                         ((uint8_t)buffer[curpointer] == 0)

@@ -2188,13 +2188,13 @@ const char *TRAINER_CLASS[]=
     "Biker",
     "Burglar",
     "Engineer",
-    "PaletteBlack",
+    "PaletteBlack", //Unused Jugler
     "Fisher",
     "Swimmer",
     "Cue Ball",
     "Gambler",
     "Beauty",
-    "Psychic",
+    "Telekinetic", // Psychic in original red
     "Rocker",
     "Juggler",
     "Tamer",
@@ -2215,7 +2215,7 @@ const char *TRAINER_CLASS[]=
     "Lois",
     "Koji",
     "Joe",
-    "Sheral",
+    "Sheryl",
     "Gentleman",
     "Rival2",
     "Rival3",
@@ -2224,6 +2224,58 @@ const char *TRAINER_CLASS[]=
     "Agatha",
     "Blanch",
     NULL
+};
+
+//Number of teams in each trainer class
+const int TrainerClassTeams[] =
+{
+    15, //#01 Youngster
+    17, //#02 Bug Catcher
+    18, //#03 Lass
+    8, //#04 Sailor
+    9, //#05 Jr Trainer M
+    24, //#06 Jr Trainer F
+    7, //#07 Pokemaniac
+    12, //#08 Super Nerd
+    14, //#09 Hiker
+    15, //#10 Biker
+    9, //#11 Burglar
+    3, //#12 Engineer
+    3, //#13 PaletteBlack (teams unused, special trainer class)
+    11, //#14 Fisher
+    15, //#15 Swimmer
+    9, //#16 Cue Ball
+    7, //#17 Gambler
+    15, //#18 Beauty
+    5, //#19 Telekinetic
+    3, //#20 Rocker
+    8, //#21 Juggler
+    6, //#22 Tamer
+    17, //#23 Bird Keeper
+    9, //#24 Blackbelt
+    9, //#25 Mura1 (teams unused, special trainer class)
+    3, //#26 Palette Red (teams unused, special trainer class)
+    1, //#27 Bugsy (teams unused, special trainer class)
+    13, //#28 Scientist
+    3, //#29 Giovanni (teams unused, special trainer class)
+    41, //#30 Rocket
+    10, //#31 Cooltrainer M
+    8, //#32 Cooltrainer F
+    1, //#33 Jared (teams unused, special trainer class)
+    1, //#34 Karpman (teams unused, special trainer class)
+    1, //#35 Lily (teams unused, special trainer class)
+    1, //#36 Sparky (teams unused, special trainer class)
+    1, //#37 Lois (teams unused, special trainer class)
+    1, //#38 Koji (teams unused, special trainer class)
+    1, //#39 Joe (teams unused, special trainer class)
+    1, //#40 Sheryl (teams unused, special trainer class)
+    5, //#41 Gentleman
+    12, //#42 Mura2 (teams unused, special trainer class)
+    3, //#43 Mura3 (teams unused, special trainer class)
+    1, //#44 Redd (teams unused, special trainer class)
+    24, //#45 Channeler
+    1, //#46 Agatha (teams unused, special trainer class)
+    1 //#47 Blanch (teams unused, special trainer class)
 };
 
 const uint16_t ItemAIPointers[19]=
