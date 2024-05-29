@@ -215,7 +215,7 @@ exit_message:
         if (comadump)
         {
             //printf("Species;Dexnumber;Name;HP;ATK;DEF;SPD;SPC;Type1;Type2;CatchRate;BaseExp;Move1;Move2;Move3;Move4;GrowthRate;SpriteDim;PicFront;PicBack;PicBank;");
-            printf("Species;Dexnumber;Name;HP;ATK;DEF;SPD;SPC;Type1;Type2;CatchRate;BaseExp;Move1;Move2;Move3;Move4;GrowthRate;Learnset;");
+            printf("Species;Dexnumber;Name;HP;ATK;DEF;SPD;SPC;Type1;Type2;CatchRate;BaseExp;Move1;Move2;Move3;Move4;GrowthRate;");
             for (int j =0; j<55; j++)
             {
                 printf("%s;", TM_HM[j]);
