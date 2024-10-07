@@ -1350,7 +1350,7 @@ void ProcessWildData (char*buffer)
 #ifdef DEBUG
             printf("\t\tGrass Slot %d: level %02d Species: %02X, %s\n", i, (uint8_t)buffer[index], (uint8_t)buffer[index+1], SpeciesName[(uint8_t)buffer[index+1]]);
 #else
-            printf("\t\tGrass Slot %d: level %02d %s\n", i, (uint8_t)buffer[index], SpeciesName[(uint8_t)buffer[index+1]]);
+            printf("\t\tGrass Slot %d (%s): level %02d %s\n", i, EncounterProbabilities[i], (uint8_t)buffer[index], SpeciesName[(uint8_t)buffer[index+1]]);
 
 #endif // DEBUG
 
@@ -1369,7 +1369,7 @@ void ProcessWildData (char*buffer)
 #ifdef DEBUG
                 printf("\t\tWater Slot %d: level %02d Species: %02X, %s\n", i, (uint8_t)buffer[index], (uint8_t)buffer[index+1], SpeciesName[(uint8_t)buffer[index+1]]);
 #else
-                printf("\t\tWater Slot %d: level %02d %s\n", i, (uint8_t)buffer[index], SpeciesName[(uint8_t)buffer[index+1]]);
+                printf("\t\tWater Slot %d (%s): level %02d %s\n", i, EncounterProbabilities[i], (uint8_t)buffer[index], SpeciesName[(uint8_t)buffer[index+1]]);
 
 #endif // DEBUG
             }
@@ -1396,7 +1396,7 @@ void ProcessWildData (char*buffer)
 #ifdef DEBUG
                 printf("\t\tWater Slot %d: level %02d Species: %02X, %s\n", i, (uint8_t)buffer[index], (uint8_t)buffer[index+1], SpeciesName[(uint8_t)buffer[index+1]]);
 #else
-                printf("\t\tWater Slot %d: level %02d %s\n", i, (uint8_t)buffer[index], SpeciesName[(uint8_t)buffer[index+1]]);
+                printf("\t\tWater Slot %d (%s): level %02d %s\n", i, EncounterProbabilities[i], (uint8_t)buffer[index], SpeciesName[(uint8_t)buffer[index+1]]);
 #endif // DEBUG
             }
         }

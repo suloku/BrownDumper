@@ -884,7 +884,7 @@ const char *MapNames[]=
     "094 (0x5E) - UNUSED (VERMILION_DOCK)",
     "095 (0x5F) - UNUSED (SS_ANNE_1F)",
     "096 (0x60) - UNUSED (SS_ANNE_2F)",
-    "097 (0x61) - UNUSED (SS_ANNE_3F)",
+    "097 (0x61) - Castro Valley - Punch Tutor House",
     "098 (0x62) - UNUSED (SS_ANNE_B1F)",
     "099 (0x63) - Final Dungeon Main Building B3F",
     "100 (0x64) - Castro Valley Dock",
@@ -2564,5 +2564,20 @@ const char *ItemAIItems[]=
     "Use Hyper Potion 50% chance",
     "Nothing",
     NULL
+};
+
+const char *EncounterProbabilities[]=
+{
+  "19.9%", //slot 0
+  "19.9%", //slot 1
+  "15.2%", //slot 2
+  "09.8%", //slot 3
+  "09.8%", //slot 4
+  "09.8%", //slot 5
+  "05.1%", //slot 6
+  "05.1%", //slot 7
+  "04.3%", //slot 8
+  "01.2%", //slot 9
+  NULL
 };
 
