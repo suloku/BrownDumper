@@ -46,6 +46,7 @@ void ProcessTypeTableData (char*buffer);
 void ProcessTrainerData (char*buffer);
 void ProcessMapData (char*buffer);
 void ProcessRodData (char*buffer);
+void ProcessRodData_Groups (char*buffer);
 
 //Constants
     int totalmon = 255;
@@ -94,6 +95,7 @@ void ProcessRodData (char*buffer);
 #define DUMP_TRAINERS 6
 #define DUMP_MAPS 7
 #define DUMP_RODS 8
+#define DUMP_RODS_GROUPS 9
 
 char * romBuffer;
 int main (int argc, char** argv)
@@ -118,6 +120,7 @@ exit_message:
 		printf("\n\t-trainers: dump trainer teams based on trainer class");
 		printf("\n\t-maps: dump map header data (offsets, number of NPC, trainers, items...)");
 		printf("\n\t-rods: dump rod data (offsets, Pokemon, levels, Super Rod maps...)");
+		printf("\n\t-rods_groups: dump rod data sorted by fishing group (offsets, Pokemon, levels, Super Rod maps...)");
         my_exit();
 	}
 	int current_argument = 1;
@@ -165,6 +168,10 @@ exit_message:
 	{
         mode = DUMP_RODS;
 	}
+    else if( !stricmp(argv[current_argument], "-rods_groups") )
+	{
+        mode = DUMP_RODS_GROUPS;
+	}
 	else
     {
         printf("\n%s is not a valid command.\n", argv[current_argument]);
@@ -175,7 +182,8 @@ exit_message:
     {
         printf("\n");
         printf("------------------------------------------------------");
-        printf("\nPokemon Brown Data Dumper 1.0 by suloku 2023\n");
+        printf("\nPokemon Brown Data Dumper 1.1 by suloku 2023-24\n");
+        printf("\n\tFor Pokemon Brown 6.1\n");
         printf("------------------------------------------------------");
         printf("\n\n");
     }
@@ -436,6 +444,10 @@ exit_message:
     else if (mode == DUMP_RODS)
     {
         ProcessRodData(romBuffer);
+    }
+    else if (mode == DUMP_RODS_GROUPS)
+    {
+        ProcessRodData_Groups(romBuffer);
     }
 
     //Save output
@@ -1547,6 +1559,116 @@ void ProcessRodData (char*buffer)
          curEntry++;
          printf ("\n");
      }
+}
+
+uint16_t _SuperRodData_GetEntryPointer(int index)
+{
+    uint16_t read_u16 = 0;
+    memcpy(&read_u16, (romBuffer + SuperRodData + (index*3) + 1), 2);
+    return read_u16;
+}
+
+uint8_t _SuperRodData_GetEntryMap(int index)
+{
+    uint8_t read_byte = 0;
+    memcpy(&read_byte, (romBuffer + SuperRodData + (index*3)), 1);
+    return read_byte;
+}
+
+
+void ProcessRodData_Groups (char*buffer)
+{
+    //Hardcoded in the rom
+    printf ("\nOld Rod:");
+    printf ("\n\t 95%% Level 05 Magikarp");
+    printf ("\n\t 05%% Level 30 Gyarados");
+
+    //Good Rod
+    printf("\n\nGood Rod:");
+    //printf("\n\nGood Rod: all 1/%d chance (%02d%%)", GoodRodMons_totalentries, 100/GoodRodMons_totalentries);
+    int i = 0;
+    int curbyte = GoodRodMons;
+    for (i=0; i<GoodRodMons_totalentries; i++)
+    {
+    printf("\n\t %02d%% Level %02d %s", 100/GoodRodMons_totalentries, buffer[curbyte], SpeciesName[buffer[curbyte+1]&0x000000FF]);
+    curbyte +=2;
+    }
+
+    //Super Rod
+    //Output as Maps that share the same groups, sorted by map entry.
+    printf("\n\nSuper Rod:\n\n");
+
+    uint8_t curmap = 0;
+    uint16_t u16curpointer = 0;
+    int curpointer = 0;
+
+    //Get total number of entries
+    int totalEntries = 0;
+    int lastUsedEntry = 0;
+    curbyte = SuperRodData;
+    while (1)
+    {
+        //get map entry
+         memcpy(&curmap, (romBuffer+curbyte), 1);
+         curbyte +=3;
+         if (curmap == 0xFF)
+            break;
+         totalEntries++;
+    }
+    printf("Total entries: %d\n", totalEntries);
+    // 50 entries are more than enough, the game currently has 33.
+    uint16_t used_pointers[50];
+
+    curbyte = SuperRodData; //go back to the start of the table
+    bool skip_entry;
+    for (i=0;i<totalEntries;i++)
+    {
+         skip_entry = false;
+         //get map entry
+         curbyte = curbyte + (i*3);
+         memcpy(&curmap, (romBuffer+curbyte), 1);
+         if (curmap == 0xFF)
+            break; //not really needed in this for loop
+
+         //get encounter table
+         u16curpointer = _SuperRodData_GetEntryPointer(i);
+
+         //has this fishing group already been dumped?
+         int j = 0;
+          for  (j=0; j<totalEntries;j++)
+         {
+             if (u16curpointer == used_pointers[j]) skip_entry = true; //Go to next entry
+         }
+         if (skip_entry) continue;
+         printf("\tFishing group %02d\n", lastUsedEntry);
+         //Print all maps that use this fishing group
+         for  (j=0; j<totalEntries;j++)
+         {
+             if (u16curpointer == _SuperRodData_GetEntryPointer(j))
+             {
+               printf("\t\tEntry %02d (0x%02X) Map: %s\n",j, SuperRodData+(j*3), MapNames[_SuperRodData_GetEntryMap(j)]);
+             }
+         }
+         //Store this fishing group in the used array
+         used_pointers[lastUsedEntry] = u16curpointer;
+         lastUsedEntry++;
+
+         //Print the encounter table
+         curpointer = ThreeByteToTwoByte(SuperRodDataBank, u16curpointer);
+
+         printf("\t\t\tEncounter table: %02X:%04X (0x%X)\n", SuperRodDataBank, u16curpointer, curpointer);
+
+         //Pokemon data
+         int totalmon = romBuffer[curpointer]&0xFF;
+         printf("\t\t\tMons in table: %d\n\t\t\tFishing chance: %02d%%\n", totalmon, 100/totalmon);
+         curpointer ++;
+         for (i=0;i<totalmon;i++)
+         {
+            printf("\t\t\t\tLevel %d %s\n", romBuffer[curpointer]&0xFF, SpeciesName[romBuffer[curpointer+1]&0xFF]);
+            curpointer += 2;
+         }
+         printf ("\n");
+    }
 }
 
 // Byte swap signed short
