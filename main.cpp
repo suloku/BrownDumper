@@ -182,8 +182,8 @@ exit_message:
     {
         printf("\n");
         printf("------------------------------------------------------");
-        printf("\nPokemon Brown Data Dumper 1.1 by suloku 2023-24\n");
-        printf("\n\tFor Pokemon Brown 6.1\n");
+        printf("\nPokemon Brown Data Dumper 1.1.1 by suloku 2023-24\n");
+        printf("\n\tFor Pokemon Brown 6.1.x\n");
         printf("------------------------------------------------------");
         printf("\n\n");
     }
@@ -426,6 +426,7 @@ exit_message:
         }
         else if (dumphiddenobjectarray)
         {
+            printf("FF"); //Table terminator
             printf("\n\nPaste the data over HiddenItemCoords at 0x766b8 (1d:66b8) in the rom.");
         }
     }
